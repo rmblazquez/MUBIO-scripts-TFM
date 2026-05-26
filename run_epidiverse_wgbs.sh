@@ -4,8 +4,8 @@
 ##############################
 
 ## log in EBD genomics server 
-#ssh mmedrano@genomics-a.ebd.csic.es #for some unidentified reason, conda is messed up in this server. Use this script in genomics-b
-ssh mmedrano@genomics-b.ebd.csic.es
+#ssh user@genomics-a.ebd.csic.es #for some unidentified reason, conda is messed up in this server. Use this script in genomics-b
+ssh user@genomics-b.ebd.csic.es
 
 ## In case we directly open a term in genomics-b, we can use screen to retrieve the session once the prompt is closed
 # configure a new session with a session name
@@ -86,12 +86,12 @@ mkdir -p ~/epidiv/ecic_genome && cd ~/epidiv/
 #mkdir -p ecic_genome/index ecic_genome/lambda && cd ecic_genome
 
 ## run the WGBS pipeline with the --INDEX option to generate genome indexes
-genome='/home/mmedrano/epidiv/ecic_genome'
+genome='/home/user/epidiv/ecic_genome'
 scp usuario@10.222.7.83:/home/usuario/Windows/Data/genomes/Ecic_genome_pacBio/MaSuRCA_assembly.fasta.PolcaCorrected.fa $genome/ecic_genome.fa
 
 ## set folder for reads
-# readsDir='/home/mmedrano/epidiv/reads/drought' # change reads path to switch projects
-readsDir='/home/mmedrano/epidiv/reads/herbivory' # change reads path to switch projects
+# readsDir='/home/user/epidiv/reads/drought' # change reads path to switch projects
+readsDir='/home/user/epidiv/reads/herbivory' # change reads path to switch projects
 mkdir -p $readsDir
 
 ## download reads
@@ -116,8 +116,8 @@ md5sum -c md5sum.txt
 #############################
 
 ## run epidiverse/wgbs pipeline
-# projectDir='/home/mmedrano/epidiv/ecic_drought_wgbs/' # change project path to switch projects
-projectDir='/home/mmedrano/epidiv/ecic_herbivory_test' # change project path to switch projects
+# projectDir='/home/user/epidiv/ecic_drought_wgbs/' # change project path to switch projects
+projectDir='/home/user/epidiv/ecic_herbivory_test' # change project path to switch projects
 mkdir -p $projectDir/wgbs && cd $projectDir/wgbs
 NXF_VER=20.07.1 nextflow run epidiverse/wgbs \
   -profile conda \
