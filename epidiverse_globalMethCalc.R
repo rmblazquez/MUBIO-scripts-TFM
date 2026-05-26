@@ -3,7 +3,7 @@
 #######################################
 
 ## Set path (in EBD Genomics-B)
-setwd("/home/mmedrano/epidiv/ecic_herbivory_test/wgbs/wgbs/bedGraph")
+setwd("/home/user/epidiv/ecic_herbivory_test/wgbs/wgbs/bedGraph")
 
 ## List with all files (bedGraph)
 
@@ -16,7 +16,7 @@ bedgraph.CHH <- bedgraph[19:36]
 
 # Generate empty  list and data frame
 reports <- list()
-globalMeth <- data.frame()
+globalMeth <- c()
 
 # CpG
 for (i in 1:length(bedgraph.CpG)) {
@@ -26,7 +26,10 @@ for (i in 1:length(bedgraph.CpG)) {
   # Calculate total percentage of methylated Cs
   globalMeth.sample <- c(bedgraph.CpG[i], sum(reports[[i]][,5]) / (sum(reports[[i]][,5]) + sum(reports[[i]][,6])))
   globalMeth <- rbind(globalMeth, globalMeth.sample)
+  print(paste0("Sample ", bedgraph.CpG[i], " processed!"))  
 }
+
+gc()
 
 # CHG
 for (i in 1:length(bedgraph.CHG)) {
@@ -34,7 +37,10 @@ for (i in 1:length(bedgraph.CHG)) {
   reports[[i]] <- reports[[i]][(reports[[i]][,5] + reports[[i]][,6] > 1), ]
   globalMeth.sample <- c(bedgraph.CHG[i], sum(reports[[i]][,5]) / (sum(reports[[i]][,5]) + sum(reports[[i]][,6])))
   globalMeth <- rbind(globalMeth, globalMeth.sample)
+  print(paste0("Sample ", bedgraph.CHG[i], " processed!"))  
 }
+
+gc()
 
 # CHH
 for (i in 1:length(bedgraph.CHH)) {
@@ -42,7 +48,10 @@ for (i in 1:length(bedgraph.CHH)) {
   reports[[i]] <- reports[[i]][(reports[[i]][,5] + reports[[i]][,6] > 1), ]
   globalMeth.sample <- c(bedgraph.CHH[i], sum(reports[[i]][,5]) / (sum(reports[[i]][,5]) + sum(reports[[i]][,6])))
   globalMeth <- rbind(globalMeth, globalMeth.sample)
+  print(paste0("Sample ", bedgraph.CHH[i], " processed!"))
 }
+
+gc()
 
 ## Summarize methylation % table and edit metadata
 
