@@ -1,19 +1,6 @@
-##############################
-###   RUNNING EPIDIVERSE   ###
-### PIPELINE IN EBD SERVER ###
-##############################
-
-## log in EBD genomics server 
-#ssh user@genomics-a.ebd.csic.es #for some unidentified reason, conda is messed up in this server. Use this script in genomics-b
-ssh user@genomics-b.ebd.csic.es
-
-## In case we directly open a term in genomics-b, we can use screen to retrieve the session once the prompt is closed
-# configure a new session with a session name
-screen -S epidiv
-# retrieve the session after exitting the promp
-screen -r # if several sessions exist, run "screen -ls" to list the session IDs, and then "screen -r <ID>" to retrieve the session
-# to exit a session, press "ctrl+a" and "d" while the session is ongoing
-# CAREFUL! typing "exit" on an active screen session will end the session, first detach the session with "ctrl+a d"
+#######################################
+###   RUNNING EPIDIVERSE PIPELINE   ###
+#######################################
 
 ## set conda to recognize your SSL certificates
 conda config --set ssl_verify /etc/ssl/certs/ca-bundle.trust.crt
@@ -63,15 +50,9 @@ R --version
 ## run epidiverse/wgbs test (use nextflow v20.07.1, otherwise, errors)
 mkdir test_wgbs && cd test_wgbs
 NXF_VER=20.07.1 nextflow run epidiverse/wgbs -profile test,conda # test successful!
-## run epidiverse/snp test
-cd .. && mkdir test_snp && cd test_snp
-NXF_VER=20.07.1 nextflow run epidiverse/snp -profile test,conda # test successful!
 ## run epidiverse/dmr test
 cd .. && mkdir test_dmr && cd test_dmr
 NXF_VER=20.07.1 nextflow run epidiverse/dmr -profile test,conda # error: metilene resample rate parameters $X and $Y are empty, thus metilene fails to run when specifying them as variables
-## run epidiverse/ewas test
-cd .. && mkdir test_ewas && cd test_ewas
-NXF_VER=20.07.1 nextflow run epidiverse/ewas -profile test,conda # test successful!
 ## check -nextflow.log for errors. If all is OK, delete test folder 
 #cd .. && rm -r test_*
 
@@ -83,20 +64,16 @@ NXF_VER=20.07.1 nextflow run epidiverse/ewas -profile test,conda # test successf
 
 ## create directory for the reference genome
 mkdir -p ~/epidiv/ecic_genome && cd ~/epidiv/
-#mkdir -p ecic_genome/index ecic_genome/lambda && cd ecic_genome
 
 ## run the WGBS pipeline with the --INDEX option to generate genome indexes
 genome='/home/user/epidiv/ecic_genome'
 scp usuario@10.222.7.83:/home/usuario/Windows/Data/genomes/Ecic_genome_pacBio/MaSuRCA_assembly.fasta.PolcaCorrected.fa $genome/ecic_genome.fa
 
 ## set folder for reads
-# readsDir='/home/user/epidiv/reads/drought' # change reads path to switch projects
 readsDir='/home/user/epidiv/reads/herbivory' # change reads path to switch projects
 mkdir -p $readsDir
 
 ## download reads
-# E. cicutarium drought + azacytidine in roots WGBS experiment
-# scp usuario@10.222.7.83:/media/usuario/HDD_DATA/HN00207300/RawFASTQ/*.fastq.gz $readsDir/
 # E. cicutarium herbivory in leaves WGBS experiment
 scp usuario@10.222.7.83:/media/usuario/One\ Drive/HN00218941/RawFASTQ/*.fastq.gz $readsDir/
 
@@ -116,7 +93,6 @@ md5sum -c md5sum.txt
 #############################
 
 ## run epidiverse/wgbs pipeline
-# projectDir='/home/user/epidiv/ecic_drought_wgbs/' # change project path to switch projects
 projectDir='/home/user/epidiv/ecic_herbivory_test' # change project path to switch projects
 mkdir -p $projectDir/wgbs && cd $projectDir/wgbs
 NXF_VER=20.07.1 nextflow run epidiverse/wgbs \
@@ -145,35 +121,6 @@ NXF_VER=20.07.1 nextflow run epidiverse/wgbs \
 cat $projectDir/wgbs/wgbs/bam/ecicBS*/stats/BisNonConvRate.txt > $projectDir/wgbs/wgbs/BisNonConvRate_summary.txt
 # Caution! this report shows the Non-Conversion! Data has to be transformed into conversion percentage with the formula 1 - NonConversionRate * 100
 
-#############################
-#### RUN PIPELINES: SNP  ####
-#############################
-
-cd $projectDir && mkdir $projectDir/snp_var && cd $projectDir/snp_var
-NXF_VER=20.07.1 nextflow run epidiverse/snp \
-  -profile conda \
-  # input is the epidiverse/wgbs output directory
-  --input $projectDir/wgbs \
-  # path to reference genome
-  --reference $genome \
-  # run 'variants' mode of the SNP pipeline
-  --variants \
-  # analyze positions with specific minimum coverage
-  --coverage 20 \
-  # specify expected ploidy
-  --ploidy 4 #\
-  ## run 'clusters' mode of the SNP pipeline
-  #--clusters
-  
-cd $projectDir && mkdir $projectDir/snp_clst && cd $projectDir/snp_clst
-NXF_VER=20.07.1 nextflow run epidiverse/snp \
-  -profile conda \
-  # input is the epidiverse/wgbs output directory
-  --input $projectDir/wgbs \
-  # path to reference genome
-  --reference $genome \
-  # run 'clusters' mode of the SNP pipeline
-  --clusters
 
 #############################
 #### RUN PIPELINES: DMR  ####
@@ -253,16 +200,5 @@ NXF_VER=20.07.1 nextflow run epidiverse/dmr \
 #
 #Tip: you can try to figure out what's wrong by changing to the process work dir and showing the script file named `.command.sh`
  
-## If I cannot run metilene within the epidiverse pipeline, it is available as Galaxy:
-# https://usegalaxy.eu/?tool_id=toolshed.g2.bx.psu.edu%2Frepos%2Frnateam%2Fmetilene%2Fmetilene%2F0.2.6.0
-# It can be ran locally too, using the run_metilene.sh script, but will need alternative downstream analysis.
-
-
-#############################
-#### RUN PIPELINES: EWAS ####
-#############################
-
-NXF_VER=20.07.1 nextflow run epidiverse/ewas \
-  -profile conda \
-  --input $readsDir \
-  --reference $genome \
+# To complete the epidiverse/dmr step I had to run metilene separately from the pipeline,
+# using the bedgraph files originated from epidiverse/dmr, with the script run_metilene.sh
