@@ -121,6 +121,17 @@ NXF_VER=20.07.1 nextflow run epidiverse/wgbs \
 cat $projectDir/wgbs/wgbs/bam/ecicBS*/stats/BisNonConvRate.txt > $projectDir/wgbs/wgbs/BisNonConvRate_summary.txt
 # Caution! this report shows the Non-Conversion! Data has to be transformed into conversion percentage with the formula 1 - NonConversionRate * 100
 
+## generate reports with alignment stats:
+cd $projectDir/wgbs/wgbs/bam
+for i in $(ls *bam | cut -d$'.' -f1); do 
+  # percent mapping
+  samtools flagstat *.bam > *.flagstat.txt
+  # coverage and depth
+  #samtools depth *.bam > *.depth
+done
+# percent mapping report
+grep properly *.flagstat.txt | sed 's/(/:/g' | cut -d$':' -f1,3 > percentageMapping.txt
+
 
 #############################
 #### RUN PIPELINES: DMR  ####
