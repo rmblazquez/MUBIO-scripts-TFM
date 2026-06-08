@@ -155,12 +155,8 @@ NXF_VER=20.07.1 nextflow run epidiverse/dmr \
   --input $projectDir/wgbs/wgbs/bedGraph \
   # generate a tab delimited table with sample and group names
   --samples samples.tsv \
-  # metilene gives an error about resample variables X and Y not bein integer, so run this option to keep the resample as an integer
-  --resample 1
   # designate one of the groups from the former table as control group (comment to allow a H vs S comparison)
   #--control C #\
-  # analyze DMPs instead of DMRs
-  #--dmp
   ## parameters to consider a DMR/DMP:
   # minimum coverage (default: 5) 
   #--coverage 6 \
@@ -169,47 +165,6 @@ NXF_VER=20.07.1 nextflow run epidiverse/dmr \
   # minimum percentage of methylation difference between groups (default: 10)
   #--diff 20
 
-## metilene gives an error:
-
-#Error executing process > 'DMRS:metilene (CpG - C_vs_H)'
-#
-#Caused by:
-#  Process `DMRS:metilene (CpG - C_vs_H)` terminated with an error exit status (1)
-#
-#Command executed:
-#
-#  mkdir tmp CpG CpG/C_vs_H
-#  bed=inputs/C_vs_H/input.bed
-#
-#  # define resample rate parameters
-#  X=$(printf "%.0f\n" $(echo $(head -1 $bed | grep -o C | wc -l)*0.8 | bc -l)) 
-#  # running:$ $(echo $(head -1 $bed | grep -o C | wc -l)*0.8 | bc -l)
-#  # gives the error:$ bash: 12*0.8: no se encontró la orden
-#  Y=$(printf "%.0f\n" $(echo $(head -1 $bed | grep -o H | wc -l)*0.8 | bc -l))
-#
-#  # run metilene
-#  metilene -X $X -Y $Y -a C -b H \
-#  -M 146 -c 2 -m 10 -d 0.1 -t 8 \
-#  $bed 1> CpG/C_vs_H/C_vs_H.bed 2> CpG/C_vs_H/C_vs_H.log || exit $?
-#
-#  # filter metilene output
-#  awk 'BEGIN {OFS="\t"} $4 <= 0.05 {len=$3-$2; print $1,$2,$3,$6,$5,$4,len}' CpG/C_vs_H/C_vs_H.bed |
-#  sort -k1,1 -k2,2n -T tmp > CpG/C_vs_H/C_vs_H.0.05.bed
-#  ln -s C_vs_H/C_vs_H.0.05.bed CpG/C_vs_H.bed
-#
-#Command exit status:
-#  1
-#
-#Command output:
-#  (empty)
-#
-#Command error:
-#  .command.sh: línea 6: printf: 4.8: número inválido
-#
-#Work dir:
-#  /home/mmedrano/epidiv/ecic_herbivory_test/dmr/work/6b/3bf8b427184f55d3ba69c300f7138b
-#
-#Tip: you can try to figure out what's wrong by changing to the process work dir and showing the script file named `.command.sh`
- 
+## The metilene step gives an error (calculations of parameters -X and -Y seem to be bugged)
 # To complete the epidiverse/dmr step I had to run metilene separately from the pipeline,
-# using the bedgraph files originated from epidiverse/dmr, with the script run_metilene.sh
+# using the bedgraph files originated from epidiverse/dmr, with the script 05_TFM_WGBS_metilene.sh
