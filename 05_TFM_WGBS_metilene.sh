@@ -53,5 +53,49 @@ for dir in $(ls -d C[pH][GH]); do
   cd ..
 done
 
-# INTEGRATE ANNOTATION BED FILE
-# Investigate "bedtools intersect" and "bedtools annotation" 
+# To annotate the detected DMRs:
+# Generate bed from E. cicutarium genome GFF file (metilene generates BED files, so it is better to avoid comparing different formats)
+genomeGFF="/mnt/d/Ruben_backup/Postdoc/2022_AlonsoLabPostdoc/Data/genomes/Ecic_genome_pacBio/Gene_prediction_files/AUGUSTUS/Cicuseq2_augustus_v2.gff"
+# Generate a BED file only with gene coordinates
+grep 'ID=gene_id' $genomeGFF | gff2bed < - > ecic_genome_gene.bed
+# To generate 5' promoter regions linked to the genes
+# Prepare a tab delimited genome file with "chromosome/contig"\t"length"
+bioawk -c fastx '{ print $name, length($seq) }' < /mnt/d/Ruben_backup/Postdoc/2022_AlonsoLabPostdoc/Data/genomes/Ecic_genome_pacBio/MaSuRCA_assembly.fasta.PolcaCorrected.linear.fa > genomeLength.txt
+# run bedtools flank with option -b 2000 (2 Kbp flanking regions in both sides of the gene)
+bedtools flank -i ecic_genome_gene.bed -g genomeLength.txt -b 2000 > ecic_genome_gene_2kbp.bed
+# Generate BED file from RepeatMasker output (filter with grep the categories 'Unknown repeat', 'Simple repeat', and 'Low complexity'):
+tail -n +4 /mnt/d/Ruben_backup/Postdoc/2022_AlonsoLabPostdoc/Data/genomes/Ecic_genome_pacBio/Repeats/CicuSeq2_assembly.fasta.noUnknownSimpleRepeatLowComplexity.out | \
+  awk 'BEGIN{OFS="\t"} {print $5, $6-1, $7, $10, $11, ".", ($9=="C" ? "-" : "+")}' > TEs.bed
+# Asign the produced BED files to variables
+genomeBED="/mnt/d/Ruben_backup/Postdoc/2022_AlonsoLabPostdoc/Analyses/EcicEcaz_2022/Ecic_WGBS_herb/ecic_herbivory_test/dmrs/dmrs/ecic_genome_gene.bed"
+genomeFLANK="/mnt/d/Ruben_backup/Postdoc/2022_AlonsoLabPostdoc/Analyses/EcicEcaz_2022/Ecic_WGBS_herb/ecic_herbivory_test/dmrs/dmrs/ecic_genome_gene_2kbp.bed"
+genomeTEs="/mnt/d/Ruben_backup/Postdoc/2022_AlonsoLabPostdoc/Data/genomes/Ecic_genome_pacBio/Repeats/TEs.bed"
+# Filter metilene output files by FDR and extract their overlapping gene IDs:
+for dir in $(ls -d C[pH][GH]); do
+  cd $dir
+  for i in $(ls); do
+    a=`echo $i | cut -c1-1`
+    b=`echo "${i: -1}"`
+    cd $a\_vs_$b
+    # If the 4th column (FDR) is less than 0.05, print the line
+    awk '{ if ($4 <= 0.05) print $0 }' < metilene_$dir.$a\_vs_$b.txt > metilene_$dir.$a\_vs_$b\_FDRfilter.txt
+    # Obtain overlaps within genes 
+    bedtools intersect -a $genomeBED -b metilene_$dir.$a\_vs_$b\_FDRfilter.txt > metilene_$dir.$a\_vs_$b\_genes.bed
+    # Obtain overlaps in 2Kbp flanking region
+    bedtools intersect -a $genomeFLANK -b metilene_$dir.$a\_vs_$b\_FDRfilter.txt > metilene_$dir.$a\_vs_$b\_genes_2kbp.bed
+    # Obtain overlaps in TE regions
+    bedtools intersect -a $genomeTEs -b metilene_$dir.$a\_vs_$b\_FDRfilter.txt > metilene_$dir.$a\_vs_$b\_TEs.bed
+    cd ..
+  done
+  cd ..
+done
+
+# To generate a few reports:
+wc -l C*/*/*FDR* > number_DMRs_comparison_report.txt # number of detected DMRs per context and comparison 
+wc -l C*/*/*genes.bed > overlap_DMR_genes_report.txt # number of DMRs overlapping with a gene
+wc -l C*/*/*2kb.bed > overlap_DMR_genes_2kb_report.txt # number of DMRs overlapping with a flanking region
+wc -l C*/*/*TEs.bed > overlap_DMR_TEs_report.txt # number of DMRs overlapping with TEs
+
+# Third: Get GO terms and do GO term enrichment analysis
+# obtain FDR from ovelapping genes (made in excel as temporary solution)
+# run topGO with script TFM_topGO_analysis.R
